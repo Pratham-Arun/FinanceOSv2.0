@@ -1,0 +1,29 @@
+flowchart TD
+    QUERY[Incoming User Query] --> INTENT{Intent Detected?}
+    
+    INTENT -->|Policy Q&A| ROUTE_RAG[Route: RAG Service]
+    INTENT -->|Status Check| ROUTE_STATUS[Route: DB Status Query]
+    INTENT -->|Rejection Reason| ROUTE_REJECT[Route: DB Rejection Query]
+    INTENT -->|General / FAQ| ROUTE_BASE[Route: Default Assistant Guide]
+
+    ROUTE_RAG --> DB_SEARCH[Search MongoDB Policy Collection]
+    DB_SEARCH --> MATCHES{Matches Found?}
+    
+    MATCHES -->|Yes| CONTEXT[Load Top Relevant Policy Chunks]
+    MATCHES -->|No| FALLBACK[Load General Policies Overview]
+    
+    CONTEXT --> GENERATOR[Construct Grounded Response with Citations]
+    FALLBACK --> GENERATOR
+    
+    ROUTE_STATUS --> DB_STATUS[Count Pending/Total Claims]
+    DB_STATUS --> FORMAT_STATUS[Format status details response]
+
+    ROUTE_REJECT --> DB_REJECT[Retrieve latest Draft/Rejected Claim flags]
+    DB_REJECT --> FORMAT_REJECT[Format explainable reason response]
+
+    ROUTE_BASE --> FORMAT_BASE[Format list of help commands]
+
+    GENERATOR --> OUTPUT[Return Grounded JSON Response]
+    FORMAT_STATUS --> OUTPUT
+    FORMAT_REJECT --> OUTPUT
+    FORMAT_BASE --> OUTPUT

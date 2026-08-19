@@ -14,6 +14,7 @@ from routers import (
     ai_router,
     knowledge_router,
     admin_router,
+    invoice_router,
 )
 
 app = FastAPI(
@@ -36,3 +37,4 @@ app.include_router(analytics_router.router)
 app.include_router(ai_router.router)
 app.include_router(knowledge_router.router)
 app.include_router(admin_router.router)
+app.include_router(invoice_router.router)

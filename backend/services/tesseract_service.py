@@ -38,11 +38,19 @@ _configure_pytesseract()
 
 # ── Field extractor ───────────────────────────────────────────────────────────
 
-async def extract_receipt_data(file_bytes: bytes, filename: str) -> Dict[str, Any]:
+async def extract_receipt_data(
+    file_bytes: bytes,
+    filename: str,
+    doc_type: str = "receipt",
+) -> Dict[str, Any]:
     """
     Full pipeline:
       1. Attempt real Tesseract OCR on pre-processed image bytes.
       2. Fall back to filename-based heuristics if pytesseract is unavailable.
+
+    `doc_type` controls which fields are extracted:
+      ``"receipt"`` — expense receipt fields (default, backward compatible)
+      ``"invoice"`` — adds due_date, vendor_tax_id, line_items
 
     Returns a standardised dict with:
       provider, ocr_data (per-field value + confidence), overall_confidence
@@ -63,14 +71,19 @@ async def extract_receipt_data(file_bytes: bytes, filename: str) -> Dict[str, An
 
     # ── Parse real OCR text when available ───────────────────────────────────
     if raw_text:
-        return _parse_raw_text(raw_text, filename)
+        return _parse_raw_text(raw_text, filename, doc_type=doc_type)
 
     # ── Filename heuristic fallback ───────────────────────────────────────────
-    return _heuristic_extraction(fname)
+    return _heuristic_extraction(fname, doc_type=doc_type)
 
 
-def _heuristic_extraction(fname: str) -> Dict[str, Any]:
-    """Produces realistic-looking OCR output based on filename keywords."""
+def _heuristic_extraction(fname: str, doc_type: str = "receipt") -> Dict[str, Any]:
+    """
+    Produces realistic-looking OCR output based on filename keywords.
+
+    `doc_type` can be ``"receipt"`` (expense flow) or ``"invoice"`` (invoice flow).
+    Invoice mode adds due_date and line_items to the returned ocr_data.
+    """
     today = datetime.date.today().isoformat()
     ts    = datetime.datetime.now().strftime("%Y%m%d")
 
@@ -87,28 +100,52 @@ def _heuristic_extraction(fname: str) -> Dict[str, Any]:
     else:
         vendor, category, subtotal, tax, total = "General Merchant Inc.", "Other", 40.00, 5.00, 45.00
 
+    ocr_data: Dict[str, Any] = {
+        "vendor":           {"value": vendor,          "confidence": 0.96},
+        "invoice_number":   {"value": f"INV-{ts}-092", "confidence": 0.92},
+        "transaction_date": {"value": today,            "confidence": 0.95},
+        "currency":         {"value": "USD",            "confidence": 0.99},
+        "subtotal":         {"value": subtotal,         "confidence": 0.92},
+        "tax_amount":       {"value": tax,              "confidence": 0.90},
+        "total_amount":     {"value": total,            "confidence": 0.97},
+        "category":         {"value": category,         "confidence": 0.94},
+    }
+
+    if doc_type == "invoice":
+        # Add invoice-specific fields
+        due_date = (
+            datetime.date.today() + datetime.timedelta(days=30)
+        ).isoformat()
+        ocr_data["due_date"] = {"value": due_date, "confidence": 0.88}
+        ocr_data["vendor_tax_id"] = {"value": "TAX-HEURISTIC-001", "confidence": 0.75}
+        ocr_data["line_items"] = {
+            "value": [
+                {
+                    "description": "Service / goods",
+                    "quantity":    1,
+                    "unit_price":  subtotal,
+                    "tax":         tax,
+                    "total":       total,
+                }
+            ],
+            "confidence": 0.80,
+        }
+
     return {
         "provider": "Tesseract OCR",
-        "ocr_data": {
-            "vendor":           {"value": vendor,         "confidence": 0.96},
-            "invoice_number":   {"value": f"INV-{ts}-092","confidence": 0.92},
-            "transaction_date": {"value": today,           "confidence": 0.95},
-            "currency":         {"value": "USD",           "confidence": 0.99},
-            "subtotal":         {"value": subtotal,        "confidence": 0.92},
-            "tax_amount":       {"value": tax,             "confidence": 0.90},
-            "total_amount":     {"value": total,           "confidence": 0.97},
-            "category":         {"value": category,        "confidence": 0.94},
-        },
+        "ocr_data": ocr_data,
         "overall_confidence": 0.94,
         "raw_text": "",
     }
 
 
-def _parse_raw_text(text: str, filename: str) -> Dict[str, Any]:
+def _parse_raw_text(text: str, filename: str, doc_type: str = "receipt") -> Dict[str, Any]:
     """
     Lightweight parser over Tesseract's raw text output.
     Extracts fields using simple keyword + regex patterns.
     Returns the same shape as `_heuristic_extraction`.
+
+    `doc_type` ``"invoice"`` adds due_date, vendor_tax_id, and line_items parsing.
     """
     import re
 
@@ -217,18 +254,102 @@ def _parse_raw_text(text: str, filename: str) -> Dict[str, Any]:
     # A small total (like $2) is still valid — don't penalise it
     conf = 0.91 if total > 0 else 0.72
 
+    ocr_data: Dict[str, Any] = {
+        "vendor":           {"value": vendor,   "confidence": 0.88},
+        "invoice_number":   {"value": invoice,  "confidence": 0.80},
+        "transaction_date": {"value": exp_date, "confidence": 0.85},
+        "currency":         {"value": "USD",    "confidence": 0.99},
+        "subtotal":         {"value": subtotal, "confidence": conf - 0.03},
+        "tax_amount":       {"value": tax,      "confidence": conf - 0.05},
+        "total_amount":     {"value": total,    "confidence": conf},
+        "category":         {"value": category, "confidence": 0.82},
+    }
+
+    # ── Invoice-specific fields ───────────────────────────────────────────────
+    if doc_type == "invoice":
+        # Due date — look for "Due", "Payment Due", "Due Date", "Pay By"
+        due_date: Optional[str] = None
+        for line in lines:
+            m = re.search(
+                r"(?:due\s*date|due|payment\s*due|pay\s*by)[:\s]*"
+                r"(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+                line, re.IGNORECASE,
+            )
+            if m:
+                raw_dd = m.group(1)
+                # normalise to ISO
+                iso_m = re.match(r"(\d{4})-(\d{2})-(\d{2})", raw_dd)
+                if iso_m:
+                    due_date = raw_dd
+                else:
+                    parts = re.split(r"[/-]", raw_dd)
+                    if len(parts) == 3:
+                        mo, d, yr = parts
+                        yr = f"20{yr}" if len(yr) == 2 else yr
+                        due_date = f"{yr}-{int(mo):02d}-{int(d):02d}"
+                break
+
+        if due_date is None:
+            # Default: 30 days from invoice date
+            try:
+                base = datetime.date.fromisoformat(exp_date)
+            except ValueError:
+                base = datetime.date.today()
+            due_date = (base + datetime.timedelta(days=30)).isoformat()
+
+        due_conf = 0.82 if due_date else 0.55
+        ocr_data["due_date"] = {"value": due_date, "confidence": due_conf}
+
+        # Vendor tax / GST ID — look for "GST", "VAT", "TIN", "Tax ID", "ABN"
+        vendor_tax_id: Optional[str] = None
+        for line in lines:
+            m = re.search(
+                r"(?:gst|vat|tin|tax\s*id|abn|gst\s*no|gst\s*#)[:\s#]*([A-Z0-9\-]+)",
+                line, re.IGNORECASE,
+            )
+            if m:
+                vendor_tax_id = m.group(1).strip()
+                break
+        tax_id_conf = 0.78 if vendor_tax_id else 0.50
+        ocr_data["vendor_tax_id"] = {"value": vendor_tax_id, "confidence": tax_id_conf}
+
+        # Line items — minimal extraction: look for lines that match
+        # "<description>  <qty>  <unit_price>  <total>" or similar tabular patterns
+        line_items = []
+        line_item_pattern = re.compile(
+            r"^(.+?)\s{2,}(\d+)\s+\$?([\d,]+\.?\d{0,2})\s+\$?([\d,]+\.?\d{0,2})\s*$"
+        )
+        for line in lines:
+            m = line_item_pattern.match(line)
+            if m:
+                try:
+                    desc, qty, unit_p, line_total = m.groups()
+                    line_items.append({
+                        "description": desc.strip(),
+                        "quantity":    int(qty),
+                        "unit_price":  float(unit_p.replace(",", "")),
+                        "tax":         0.0,
+                        "total":       float(line_total.replace(",", "")),
+                    })
+                except (ValueError, IndexError):
+                    pass
+
+        # If no tabular line items found, synthesise one from the totals
+        if not line_items and total > 0:
+            line_items = [{
+                "description": "Services/goods (extracted)",
+                "quantity":    1,
+                "unit_price":  subtotal,
+                "tax":         tax,
+                "total":       total,
+            }]
+
+        li_conf = 0.75 if len(line_items) > 1 else 0.60
+        ocr_data["line_items"] = {"value": line_items, "confidence": li_conf}
+
     return {
         "provider": "Tesseract OCR",
-        "ocr_data": {
-            "vendor":           {"value": vendor,   "confidence": 0.88},
-            "invoice_number":   {"value": invoice,  "confidence": 0.80},
-            "transaction_date": {"value": exp_date, "confidence": 0.85},
-            "currency":         {"value": "USD",    "confidence": 0.99},
-            "subtotal":         {"value": subtotal, "confidence": conf - 0.03},
-            "tax_amount":       {"value": tax,      "confidence": conf - 0.05},
-            "total_amount":     {"value": total,    "confidence": conf},
-            "category":         {"value": category, "confidence": 0.82},
-        },
+        "ocr_data": ocr_data,
         "overall_confidence": conf,
         "raw_text": text[:2000],
     }

@@ -1,0 +1,70 @@
+graph TD
+    subgraph Frontend["React Frontend (SPA)"]
+        UI["User Interface (React / Tailwind)"]
+        AuthCtx["Auth Context & RBAC Guards"]
+        State["State Management & Axios HTTP Client"]
+    end
+
+    subgraph Gateway["FastAPI Backend Gateway"]
+        AuthMiddleware["JWT Authentication Middleware"]
+        CorrID["X-Request-ID Correlation Middleware"]
+        APIRouters["API Routers (Auth, Expenses, Approvals, AI, Admin)"]
+    end
+
+    subgraph CoreServices["Application Services Layer"]
+        AuthSvc["Auth Service"]
+        ExpSvc["Expense Service"]
+        ApprSvc["Approval Service"]
+        RuleEng["Rule Engine & Duplicate Detector"]
+        ObsSvc["Enterprise Observability & Audit Logger"]
+    end
+
+    subgraph AISubsystem["AI / OCR & Intelligence Subsystem"]
+        OCRFactory["OCR Provider Interface"]
+        TesseractOCR["Tesseract OCR Engine"]
+        LLMFactory["LLM Provider Interface"]
+        GeminiLLM["Google Gemini 2.5 Flash"]
+        LangGraph["LangGraph Multi-Agent Orchestrator"]
+        RAGPipe["RAG Service Pipeline"]
+    end
+
+    subgraph KnowledgeBase["Policy Knowledge Base & RAG"]
+        ChromaDB[("ChromaDB Vector Store")]
+        PolicyDocs["Company Policy & Compliance Docs"]
+    end
+
+    subgraph Persistence["Data & Storage Layer"]
+        Repo["MongoDB Repository Layer (IRepository)"]
+        MongoDB[("MongoDB Database")]
+        FileStore["Receipt Upload Storage"]
+    end
+
+    UI -->|HTTPS Requests| AuthMiddleware
+    AuthMiddleware -->|Validate JWT Token| AuthCtx
+    AuthMiddleware --> CorrID
+    CorrID --> APIRouters
+    
+    APIRouters --> AuthSvc
+    APIRouters --> ExpSvc
+    APIRouters --> ApprSvc
+    
+    ExpSvc --> OCRFactory
+    OCRFactory --> TesseractOCR
+    ExpSvc --> RuleEng
+    RuleEng --> LLMFactory
+    LLMFactory --> GeminiLLM
+
+    APIRouters --> LangGraph
+    LangGraph --> RAGPipe
+    RAGPipe --> PolicyDocs
+    RAGPipe --> ChromaDB
+    
+    ExpSvc --> ObsSvc
+    ApprSvc --> ObsSvc
+    
+    ExpSvc --> Repo
+    ApprSvc --> Repo
+    AuthSvc --> Repo
+    
+    Repo --> MongoDB
+    ExpSvc -->|Save File| FileStore

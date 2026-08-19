@@ -1,0 +1,43 @@
+flowchart TD
+    START[User Opens FinanceOS]
+    AUTHQ{Authenticated?}
+    LOGIN[Login / Register]
+    CRED[Validate Credentials]
+    DB[(MongoDB Users)]
+    VALID{Valid User?}
+    FAIL[Authentication Failed]
+    JWT[Generate JWT]
+    TOKEN[Store Access Token]
+    REQUEST[Protected API Request]
+    MW[JWT Authentication Middleware]
+    VERIFY[Verify JWT]
+    USER[Get Current User]
+    ROLE{Role Check}
+    EMP[Employee Portal]
+    MAN[Manager Portal]
+    FIN[Finance Officer Portal]
+    ADMIN[Admin Portal]
+
+    START --> AUTHQ
+
+    AUTHQ -- No --> LOGIN
+    LOGIN --> CRED
+    CRED --> DB
+    DB --> VALID
+
+    VALID -- No --> FAIL
+    VALID -- Yes --> JWT
+    JWT --> TOKEN
+    TOKEN --> REQUEST
+
+    AUTHQ -- Yes --> REQUEST
+
+    REQUEST --> MW
+    MW --> VERIFY
+    VERIFY --> USER
+    USER --> ROLE
+
+    ROLE -->|Employee| EMP
+    ROLE -->|Manager| MAN
+    ROLE -->|Finance Officer| FIN
+    ROLE -->|Admin| ADMIN

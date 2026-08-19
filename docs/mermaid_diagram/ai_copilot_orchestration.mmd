@@ -1,0 +1,32 @@
+flowchart TD
+    QUERY[Incoming User Message] --> INTENT{Intent Classifier<br/>String Keyword Matching}
+
+    %% Branches
+    INTENT -->|Rejection Reasons<br/>'why', 'reject'| REJECT_INTENT[Expense Rejection Route]
+    INTENT -->|Claim Status<br/>'status', 'pending'| STATUS_INTENT[Expense Status Route]
+    INTENT -->|Policy FAQs<br/>'limit', 'meal', 'hotel', 'taxi', etc.| RAG_INTENT[Policy RAG Route]
+    INTENT -->|Analytics Guidance<br/>'analytics', 'spending'| ANALYTICS_INTENT[Analytics Route]
+    INTENT -->|General / Other| HELP_INTENT[General Help Route]
+
+    %% Actions
+    REJECT_INTENT --> FETCH_REJECT[Query User's Rejected/Draft Claims from DB]
+    FETCH_REJECT --> FORMAT_REJECT[Extract AI Risk Flags & Policy Violations]
+    
+    STATUS_INTENT --> FETCH_STATUS[Query User's Pending Claims Count from DB]
+    
+    RAG_INTENT --> RUN_RAG[Trigger RAG Service Query]
+    RUN_RAG --> SEARCH_KNOWLEDGE[Search MongoDB Knowledge Collection]
+    SEARCH_KNOWLEDGE --> GENERATE_Grounded[Select policy template / LLM Grounding Context]
+
+    ANALYTICS_INTENT --> SHOW_GUIDE[Direct user to Analytics dashboard tab]
+
+    HELP_INTENT --> SHOW_CAPABILITIES[List available bot actions & commands]
+
+    %% Consolidation
+    FORMAT_REJECT --> SYNTHESIZE[Format Response Package]
+    FETCH_STATUS --> SYNTHESIZE
+    GENERATE_Grounded --> SYNTHESIZE
+    SHOW_GUIDE --> SYNTHESIZE
+    SHOW_CAPABILITIES --> SYNTHESIZE
+
+    SYNTHESIZE --> REPLY[Return JSON Response with Grounded Reply]

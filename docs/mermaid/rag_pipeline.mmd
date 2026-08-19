@@ -1,0 +1,21 @@
+graph TD
+    subgraph Ingestion["Document Ingestion & Indexing"]
+        Docs[Company Policy Documents] --> TextSplitter[Recursive Character Text Splitter]
+        TextSplitter --> Chunking[Document Chunks: 500 tokens, 50 overlap]
+        Chunking --> EmbedModel[Embedding Model: HuggingFace / OpenAI]
+        EmbedModel --> VectorStore[ChromaDB Vector Store]
+    end
+
+    subgraph Retrieval["Query Retrieval & Grounding"]
+        UserQ[Employee Policy Query] --> QueryEmbed[Embed Query String]
+        QueryEmbed --> SimilaritySearch[Vector Similarity Search: Cosine Top-K=4]
+        VectorStore --> SimilaritySearch
+        SimilaritySearch --> RelevantChunks[Relevant Policy Excerpts]
+    end
+
+    subgraph Generation["Grounded Response Generation"]
+        RelevantChunks --> PromptTemplate[Construct Grounded RAG Prompt]
+        UserQ --> PromptTemplate
+        PromptTemplate --> LLMEngine[Google Gemini 2.5 Flash]
+        LLMEngine --> GroundedAnswer[Generate Grounded Response + Policy Citations]
+    end

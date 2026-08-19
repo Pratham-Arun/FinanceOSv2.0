@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+    actor User as User / Client
+    participant FE as React Frontend
+    participant AuthRouter as Auth Router
+    participant AuthSvc as Auth Service
+    participant JWT as Security Utility
+    participant Repo as User Repository
+    participant DB as MongoDB
+
+    User->>FE: Enter Credentials (Email & Password)
+    FE->>AuthRouter: POST /api/auth/login
+    AuthRouter->>AuthSvc: authenticate_user(email, password)
+    AuthSvc->>Repo: get_by_email(email)
+    Repo->>DB: Query User Collection
+    DB-->>Repo: User Document (with hashed password)
+    Repo-->>AuthSvc: User Object
+    AuthSvc->>JWT: verify_password(plain_pwd, hashed_pwd)
+    alt Invalid Password / User Not Found
+        JWT-->>AuthSvc: False
+        AuthSvc-->>AuthRouter: Raise HTTP 401 Unauthorized
+        AuthRouter-->>FE: 401 Invalid Credentials
+        FE-->>User: Show Login Error Alert
+    else Credentials Valid
+        JWT-->>AuthSvc: True
+        AuthSvc->>JWT: create_access_token(user_id, role)
+        JWT-->>AuthSvc: Signed JWT Token
+        AuthSvc-->>AuthRouter: AuthResponse (Token + User Profile)
+        AuthRouter-->>FE: HTTP 200 OK + JWT Bearer Token
+        FE->>FE: Store Token in LocalStorage & Update AuthContext
+        FE-->>User: Navigate to Role-Based Dashboard
+    end

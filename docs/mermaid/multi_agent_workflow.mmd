@@ -1,0 +1,20 @@
+graph TD
+    UserQuery([User Query / Expense Trigger]) --> Supervisor[Supervisor Agent Router]
+    
+    Supervisor -->|Policy Question| PolicyAgent[Policy Compliance Agent]
+    Supervisor -->|OCR / Receipt Question| OCRAgent[OCR Data Verification Agent]
+    Supervisor -->|Risk / Audit Question| FraudAgent[Fraud & Anomaly Agent]
+    
+    PolicyAgent --> ToolRAG[Query RAG Policy Vector Base]
+    OCRAgent --> ToolOCR[Inspect OCR Extracted Tokens]
+    FraudAgent --> ToolAudit[Query Audit Logs & Duplicate Engine]
+    
+    ToolRAG --> PolicyAgent
+    ToolOCR --> OCRAgent
+    ToolAudit --> FraudAgent
+    
+    PolicyAgent --> Synthesizer[Response Synthesizer Node]
+    OCRAgent --> Synthesizer
+    FraudAgent --> Synthesizer
+    
+    Synthesizer --> FinalOutput([Return Grounded Explainable Recommendation])

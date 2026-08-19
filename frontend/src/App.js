@@ -19,6 +19,9 @@ import KnowledgeBase from './pages/KnowledgeBase';
 import PolicyManager from './pages/PolicyManager';
 import AILogs from './pages/AILogs';
 import AIConfigPanel from './pages/AIConfigPanel';
+import Invoices from './pages/Invoices';
+import SubmitInvoice from './pages/SubmitInvoice';
+import InvoiceDetails from './pages/InvoiceDetails';
 
 // Import Components
 import AppShell from './components/AppShell';
@@ -97,6 +100,9 @@ function App() {
                     <Route path="/policy-rules" element={<PolicyManager />} />
                     <Route path="/ai-logs" element={<AILogs />} />
                     <Route path="/ai-config" element={<AIConfigPanel />} />
+                    <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/invoices/submit" element={<SubmitInvoice />} />
+                    <Route path="/invoice/:id" element={<InvoiceDetails />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                   <FloatingAIChat />

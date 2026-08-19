@@ -1,0 +1,49 @@
+sequenceDiagram
+    autonumber
+    actor Employee
+    actor Manager
+    actor Finance
+    participant FE as React Frontend
+    participant Gateway as FastAPI Router
+    participant OCR as OCR Service
+    participant RE as Rule Engine
+    participant LLM as Gemini LLM AI
+    participant DB as MongoDB Repository
+    participant Obs as Audit Logger
+
+    Employee->>FE: Upload Receipt File
+    FE->>Gateway: POST /api/expenses/upload
+    Gateway->>OCR: Process Image with Tesseract
+    OCR-->>Gateway: Raw Extracted Text
+    Gateway->>LLM: Structured JSON Extraction
+    LLM-->>Gateway: Vendor, Amount, Date, Tax
+    Gateway-->>FE: Pre-filled Expense Form
+    
+    Employee->>FE: Review & Submit Claim
+    FE->>Gateway: POST /api/expenses
+    Gateway->>RE: Run Policy Rules & Fraud Scoring
+    RE-->>Gateway: Risk Level (Low/Med/High) & Flag Analysis
+    Gateway->>DB: Save Expense (Status: Submitted)
+    Gateway->>Obs: Record Audit Log Entry
+    Gateway-->>FE: Expense Submitted Successfully
+
+    Manager->>FE: Open Pending Manager Approvals Queue
+    FE->>Gateway: GET /api/expenses/{id}
+    Gateway->>DB: Fetch Claim Details
+    DB-->>Gateway: Expense + AI Risk Report
+    Gateway-->>FE: Render 3-Column Review Workspace
+    Manager->>FE: Click Approve
+    FE->>Gateway: POST /api/approvals/{id}/action (Approve)
+    Gateway->>DB: Update Status to Approved
+    Gateway->>Obs: Audit Log: Approved by Manager
+
+    Finance->>FE: Open Finance Disburse Queue
+    FE->>Gateway: GET /api/expenses?status=Approved
+    Gateway->>DB: Fetch Approved Claims
+    DB-->>Gateway: Claims List
+    Gateway-->>FE: Display Claims
+    Finance->>FE: Click Process Payment
+    FE->>Gateway: POST /api/approvals/{id}/action (Pay)
+    Gateway->>DB: Update Status to Paid + TxID
+    Gateway->>Obs: Audit Log: Payment Disbursed
+    Gateway-->>FE: Payment Confirmed

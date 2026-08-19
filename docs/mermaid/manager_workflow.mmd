@@ -1,0 +1,8 @@
+graph TD
+    ReceiveClaim([Claim Received in Queue]) --> ReviewDetails[Inspect Expense Details & Receipt]
+    ReviewDetails --> ReviewOCR[Verify Extracted OCR Metadata]
+    ReviewOCR --> ReviewAI[Check Policy Rule Engine & AI Fraud Score]
+    ReviewAI --> Decision{Manager Decision}
+    Decision -->|Approve| PassToFinance[Route Status to Approved / Finance Queue]
+    Decision -->|Reject| NotifyEmployeeReject[Set Status Rejected & Notify Employee]
+    Decision -->|Clarify| ReturnDraft[Request Clarification / Return to Draft]

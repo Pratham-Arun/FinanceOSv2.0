@@ -1,0 +1,7 @@
+graph TD
+    AdminStart([Admin Logs In]) --> Choice{Admin Dashboard Area}
+    Choice -->|User Management| ManageUsers[Create / Modify User Roles & Managers]
+    Choice -->|Policy Management| EditPolicies[Configure Category Spending Limits]
+    Choice -->|Rule Engine| EditRules[Define Duplicate Windows & Thresholds]
+    Choice -->|AI Configuration| ConfigAI[Configure AI Providers & Prompts]
+    Choice -->|Audit Logs| InspectLogs[Review System & AI Observability Logs]

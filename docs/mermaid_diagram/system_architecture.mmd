@@ -1,0 +1,59 @@
+flowchart TB
+    U[Users]
+    FE[React Frontend]
+    API[FastAPI Backend]
+
+    AUTH[JWT Authentication]
+    RBAC[Role Based Access Control]
+
+    SERVICES[Service Layer]
+
+    EXP[Expense Service]
+    AI[AI Service]
+    OCR[OCR Service]
+    RULE[Rule Engine]
+    APPROVAL[Approval Service]
+    NOTIFY[Notification Service]
+
+    REPO[Repository Layer]
+
+    MONGO[(MongoDB)]
+
+    OCRP[OCR Provider]
+    LLM[LLM Provider<br/>Gemini 2.5 Flash]
+    RAG[RAG Pipeline]
+    
+    AUDIT[Audit Logging]
+    OBS[AI Observability]
+    ANALYTICS[Enterprise Analytics]
+
+    U --> FE
+    FE --> API
+
+    API --> AUTH
+    AUTH --> RBAC
+    RBAC --> SERVICES
+
+    SERVICES --> EXP
+    SERVICES --> AI
+    SERVICES --> OCR
+    SERVICES --> RULE
+    SERVICES --> APPROVAL
+    SERVICES --> NOTIFY
+
+    EXP --> REPO
+    AI --> REPO
+    OCR --> REPO
+    APPROVAL --> REPO
+
+    REPO --> MONGO
+
+    OCR --> OCRP
+    AI --> LLM
+    AI --> RAG
+    RAG --> MONGO
+    RAG --> LLM
+
+    SERVICES --> AUDIT
+    AI --> OBS
+    MONGO --> ANALYTICS

@@ -1,0 +1,8 @@
+graph TD
+    Start([Employee Starts Expense]) --> CreateDraft[Create Expense Form]
+    CreateDraft --> UploadReceipt[Upload Receipt / Invoice Image]
+    UploadReceipt --> OCRProcess[Trigger Tesseract OCR]
+    OCRProcess --> AutoFill[Auto-fill Vendor, Amount, Date & Tax]
+    AutoFill --> PolicyCheck[Run Client Pre-Validation]
+    PolicyCheck --> SubmitClaim[Submit Claim for Manager Review]
+    SubmitClaim --> TrackStatus[Track Status in Dashboard]

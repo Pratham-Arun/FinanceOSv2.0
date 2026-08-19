@@ -212,6 +212,14 @@ class IOCRResultsRepository(ABC):
     async def find_all_by_expense(self, expense_id: str) -> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    async def find_by_invoice_id(self, invoice_id: str) -> Optional[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def find_all_by_invoice(self, invoice_id: str) -> List[Dict[str, Any]]:
+        pass
+
 
 class IAIConfigRepository(ABC):
     """Interface for the ai_configuration singleton collection."""
@@ -222,4 +230,37 @@ class IAIConfigRepository(ABC):
 
     @abstractmethod
     async def upsert(self, updates: Dict[str, Any], updated_by: str) -> Dict[str, Any]:
+        pass
+
+
+class IInvoiceRepository(ABC):
+    """Interface for the invoices collection."""
+
+    @abstractmethod
+    async def create(self, invoice_data: Dict[str, Any]) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def get_by_id(self, invoice_id: str) -> Optional[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def get_by_invoice_number(self, invoice_number: str, vendor_name: str) -> Optional[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def list(
+        self,
+        query: Dict[str, Any],
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def update(self, invoice_id: str, update_fields: Dict[str, Any]) -> None:
+        pass
+
+    @abstractmethod
+    async def delete(self, invoice_id: str) -> None:
         pass

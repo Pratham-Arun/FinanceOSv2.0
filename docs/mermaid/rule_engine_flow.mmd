@@ -1,0 +1,24 @@
+graph TD
+    Input[Incoming Expense Submission] --> CategoryCheck{Valid Policy Category?}
+    CategoryCheck -->|No| FlagInvalidCat[Flag: Invalid Category Violation]
+    CategoryCheck -->|Yes| FetchLimit[Fetch Category Max Threshold]
+    
+    FetchLimit --> AmountCheck{Amount > Category Max Limit?}
+    AmountCheck -->|Yes| FlagLimitViolated[Flag: Expense Limit Exceeded]
+    AmountCheck -->|No| ReceiptCheck{Receipt Required & Provided?}
+    
+    ReceiptCheck -->|Missing| FlagReceiptMissing[Flag: Mandatory Receipt Missing]
+    ReceiptCheck -->|Valid| DupCheck{Duplicate Vendor, Amount & Date within N Days?}
+    
+    DupCheck -->|Found| FlagDuplicate[Flag: High-Probability Duplicate Claim]
+    DupCheck -->|Clear| CalculateScore[Aggregate Risk Score & Confidence]
+    
+    FlagInvalidCat --> CalculateScore
+    FlagLimitViolated --> CalculateScore
+    FlagReceiptMissing --> CalculateScore
+    FlagDuplicate --> CalculateScore
+    
+    CalculateScore --> RiskEval{Total Risk Points}
+    RiskEval -->|Score >= 70| HighRisk[Risk Level: High -> Require Manager Action]
+    RiskEval -->|30 <= Score < 70| MedRisk[Risk Level: Medium -> Caution Flag]
+    RiskEval -->|Score < 30| LowRisk[Risk Level: Low -> Fast-Track Eligible]

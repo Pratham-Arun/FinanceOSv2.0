@@ -1,0 +1,8 @@
+graph TD
+    ReceiveApproved([Approved Claim Enters Queue]) --> FinancialVerify[Verify Financial & Tax Information]
+    FinancialVerify --> ReceiptCheck[Cross-check Receipt & Vendor Data]
+    ReceiptCheck --> AuditReview[Inspect AI & Policy Audit Logs]
+    AuditReview --> Action{Finance Action}
+    Action -->|Disburse Payment| ProcessPayment[Execute Reimbursement & Issue TxID]
+    ProcessPayment --> MarkPaid[Set Expense Status to Paid]
+    Action -->|Flag Anomaly| FlagReject[Reject / Flag for Audit Investigation]

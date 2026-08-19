@@ -1,0 +1,25 @@
+graph TD
+    IncomingQuery[Incoming User Prompt] --> IntentClassifier{Intent Classification}
+    
+    IntentClassifier -->|Policy FAQ| RouteRAG[Force Route: RAG Pipeline]
+    IntentClassifier -->|Expense Status| RouteDB[Force Route: Database Query Service]
+    IntentClassifier -->|Receipt Audit| RouteOCR[Force Route: OCR Analysis Service]
+    IntentClassifier -->|General / Other| RouteLLM[Force Route: Base LLM Guardrails]
+    
+    RouteRAG --> RetrieveDocs[Retrieve Policy Chunks from Vector DB]
+    RetrieveDocs --> GroundedPrompt[Construct Grounded Context Prompt]
+    GroundedPrompt --> GenerateAnswer[Generate AI Copilot Answer]
+    
+    RouteDB --> QueryDB[Execute User-Scoped DB Retrieval]
+    QueryDB --> FormatStatus[Format Claim Status Response]
+    
+    RouteOCR --> FetchOCR[Retrieve Receipt OCR Bounding Blocks]
+    FetchOCR --> AnalyzeOCR[Evaluate Extraction Quality]
+    
+    RouteLLM --> SystemGuard[Apply Enterprise Policy Guardrails]
+    SystemGuard --> SafeResponse[Generate Safe System Answer]
+
+    GenerateAnswer --> FormatOutput[Format Standard JSON/Markdown Response]
+    FormatStatus --> FormatOutput
+    AnalyzeOCR --> FormatOutput
+    SafeResponse --> FormatOutput

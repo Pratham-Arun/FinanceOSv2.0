@@ -1,0 +1,46 @@
+sequenceDiagram
+    actor Employee
+    participant FE as React Frontend
+    participant API as FastAPI
+    participant AUTH as JWT Auth
+    participant EXP as Expense Service
+    participant OCR as OCR Service
+    participant RULE as Rule Engine
+    participant DUP as Duplicate Detector
+    participant AI as AI Service
+    participant DB as MongoDB
+
+    Employee->>FE: Login
+    FE->>API: POST /api/login
+    API->>AUTH: Validate Credentials
+    AUTH->>DB: Fetch User
+    DB-->>AUTH: User Data
+    AUTH-->>API: JWT Token
+    API-->>FE: Access Token
+
+    Employee->>FE: Submit Expense
+    Employee->>FE: Upload Receipt
+
+    FE->>API: POST /api/expenses
+    API->>EXP: Create Expense
+    EXP->>DB: Store Expense
+    DB-->>EXP: Expense Created
+
+    API->>OCR: Process Receipt
+    OCR-->>API: Extracted Expense Data
+
+    API->>RULE: Validate Expense
+    RULE-->>API: Policy Result
+
+    API->>DUP: Check Duplicate
+    DUP->>DB: Search Similar Expenses
+    DB-->>DUP: Matching Expenses
+    DUP-->>API: Duplicate Result
+
+    API->>AI: Analyze Expense
+    AI-->>API: Risk Score + Recommendation
+
+    API->>DB: Store OCR + AI Results
+    API-->>FE: Expense Status + Analysis
+
+    FE-->>Employee: Display Expense Details

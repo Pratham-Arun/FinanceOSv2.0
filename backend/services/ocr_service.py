@@ -162,9 +162,16 @@ class OCRService:
         provider_name: Optional[str] = None,   # kept for backward compat, ignored
         expense_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        invoice_id: Optional[str] = None,
+        doc_type: str = "receipt",
     ) -> Dict[str, Any]:
         """
         Full pipeline: preprocess → Tesseract OCR → store result → log event.
+
+        Pass ``invoice_id`` (and ``doc_type="invoice"``) when processing invoice
+        documents — the OCR result is linked to the invoice record in addition
+        to (or instead of) an expense record.
+
         Returns the complete OCR result dict.
         """
         from repositories.ocr_results_repository import ocr_results_repository
@@ -182,8 +189,10 @@ class OCRService:
             # Preprocess
             processed_bytes = self._preprocess(file_bytes, filename)
 
-            # Extract via Tesseract
-            extracted = await tesseract_service.extract_receipt_data(processed_bytes, filename)
+            # Extract via Tesseract — pass doc_type so invoice fields are included
+            extracted = await tesseract_service.extract_receipt_data(
+                processed_bytes, filename, doc_type=doc_type
+            )
 
         except Exception as exc:
             processing_time_ms = round(time.time() * 1000 - start_ms, 1)
@@ -206,6 +215,7 @@ class OCRService:
                 "overall_confidence": 0.0,
                 "ocr_data": {},
                 "request_id": request_id,
+                "invoice_id": invoice_id,
             }
 
         processing_time_ms = round(time.time() * 1000 - start_ms, 1)
@@ -213,10 +223,11 @@ class OCRService:
         overall_conf = extracted.get("overall_confidence", 0.95)
         ocr_data = extracted.get("ocr_data", {})
 
-        # Store in ocr_results collection
+        # Store in ocr_results collection — include invoice_id when provided
         ocr_doc = {
             "request_id":        request_id,
             "expense_id":        expense_id,
+            "invoice_id":        invoice_id,
             "provider":          provider_name_used,
             "raw_text":          extracted.get("raw_text", ""),
             "parsed_fields":     ocr_data,
@@ -252,6 +263,7 @@ class OCRService:
             "overall_confidence": overall_conf,
             "ocr_data":          ocr_data,
             "request_id":        request_id,
+            "invoice_id":        invoice_id,
         }
 
     # ── Legacy upload_and_parse (used by server.py /api/expenses/upload) ─────

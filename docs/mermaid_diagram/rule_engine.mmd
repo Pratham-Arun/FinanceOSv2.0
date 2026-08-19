@@ -1,0 +1,44 @@
+flowchart TD
+    INPUT[Incoming Expense / Query]
+    VALIDATE[Validate Input]
+    EMPTY{Valid Input?}
+    BLOCK[Reject Request]
+    RULE[Rule Engine]
+    CATEGORY{Expense / Query Type}
+    MEAL[Meal Policy Rules]
+    HOTEL[Hotel Policy Rules]
+    TRAVEL[Travel Policy Rules]
+    RECEIPT[Receipt Requirement]
+    DUP[Duplicate Claim Rules]
+    GENERAL[General Expense Rules]
+    RESULT[Generate Rule Result]
+    PASS{Policy Passed?}
+    APPROVE[Continue Workflow]
+    FLAG[Flag for Review]
+
+    INPUT --> VALIDATE
+    VALIDATE --> EMPTY
+
+    EMPTY -- No --> BLOCK
+    EMPTY -- Yes --> RULE
+
+    RULE --> CATEGORY
+
+    CATEGORY -->|Meal| MEAL
+    CATEGORY -->|Hotel| HOTEL
+    CATEGORY -->|Travel| TRAVEL
+    CATEGORY -->|Receipt| RECEIPT
+    CATEGORY -->|Duplicate| DUP
+    CATEGORY -->|Other| GENERAL
+
+    MEAL --> RESULT
+    HOTEL --> RESULT
+    TRAVEL --> RESULT
+    RECEIPT --> RESULT
+    DUP --> RESULT
+    GENERAL --> RESULT
+
+    RESULT --> PASS
+
+    PASS -- Yes --> APPROVE
+    PASS -- No --> FLAG

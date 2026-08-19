@@ -40,5 +40,18 @@ class OCRResultsRepository(IOCRResultsRepository):
         ).sort("created_at", -1).to_list(None)
         return format_docs(docs)
 
+    async def find_by_invoice_id(self, invoice_id: str) -> Optional[Dict[str, Any]]:
+        """Return the most recent OCR result for this invoice."""
+        docs = await self.col.find(
+            {"invoice_id": invoice_id}
+        ).sort("created_at", -1).to_list(1)
+        return format_doc(docs[0]) if docs else None
+
+    async def find_all_by_invoice(self, invoice_id: str) -> List[Dict[str, Any]]:
+        docs = await self.col.find(
+            {"invoice_id": invoice_id}
+        ).sort("created_at", -1).to_list(None)
+        return format_docs(docs)
+
 
 ocr_results_repository = OCRResultsRepository()

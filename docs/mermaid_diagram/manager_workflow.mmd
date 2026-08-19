@@ -1,0 +1,39 @@
+sequenceDiagram
+    actor Manager
+    participant FE as React Frontend
+    participant API as FastAPI
+    participant AUTH as JWT Auth
+    participant APPROVAL as Approval Service
+    participant DB as MongoDB
+    participant NOTIFY as Notification Service
+
+    Manager->>FE: Open Pending Expenses
+
+    FE->>API: GET /api/approvals/manager/pending
+    API->>AUTH: Verify JWT + Manager Role
+    AUTH-->>API: Authorized
+
+    API->>APPROVAL: Get Pending Expenses
+    APPROVAL->>DB: Query Expenses
+    DB-->>APPROVAL: Pending Expenses
+    APPROVAL-->>API: Expense List
+    API-->>FE: Display Expenses
+
+    Manager->>FE: Open Expense
+
+    FE->>API: GET /api/expenses/{id}
+    API->>DB: Fetch Expense + OCR + AI Results
+    DB-->>API: Expense Data
+    API-->>FE: Expense Details (Risk Report + Decision Board)
+
+    Manager->>FE: Approve / Reject / Clarification
+
+    FE->>API: POST /api/approvals/{id}/action
+    API->>APPROVAL: Process Decision
+
+    APPROVAL->>DB: Update Approval Status
+
+    APPROVAL->>NOTIFY: Send Notification
+    NOTIFY-->>Manager: Decision Confirmation
+
+    API-->>FE: Updated Expense Status

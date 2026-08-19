@@ -1,0 +1,47 @@
+sequenceDiagram
+    actor Finance as Finance Officer
+    participant FE as React Frontend
+    participant API as FastAPI
+    participant AUTH as JWT Auth
+    participant APPROVAL as Approval Service
+    participant PAY as Payment Service
+    participant DB as MongoDB
+    participant AUDIT as Audit Logger
+
+    Finance->>FE: Open Finance Dashboard
+
+    FE->>API: GET /api/approvals/finance/pending
+    API->>AUTH: Verify JWT + Finance Role
+    AUTH-->>API: Authorized
+
+    API->>APPROVAL: Get Manager-Approved Expenses
+    APPROVAL->>DB: Query Approved Expenses
+    DB-->>APPROVAL: Expense List
+    APPROVAL-->>API: Pending Finance Expenses
+    API-->>FE: Display Expenses
+
+    Finance->>FE: Review Expense
+
+    FE->>API: GET /api/expenses/{id}
+    API->>DB: Fetch Expense + Audit History
+    DB-->>API: Expense Data
+    API-->>FE: Display Details
+
+    Finance->>FE: Approve / Reject
+
+    FE->>API: POST /api/approvals/{id}/action (Pay/Reject)
+    API->>APPROVAL: Process Decision
+
+    APPROVAL->>DB: Update Finance Status
+
+    alt Approved
+        APPROVAL->>PAY: Initiate Payment (Reimbursement)
+        PAY->>DB: Update Payment Status (Paid)
+        PAY->>AUDIT: Record Payment Event
+        AUDIT->>DB: Store Audit Log
+        API-->>FE: Payment Disbursed (Paid)
+    else Rejected
+        APPROVAL->>AUDIT: Record Rejection
+        AUDIT->>DB: Store Audit Log
+        API-->>FE: Expense Rejected
+    end

@@ -40,7 +40,12 @@ class Mongo:
         await self.db.ocr_results.create_index([("expense_id", 1)])
         await self.db.ocr_results.create_index([("created_at", -1)])
         await self.db.ocr_results.create_index([("request_id", 1)])
+        await self.db.ocr_results.create_index([("invoice_id", 1)])
         await self.db.ai_configuration.create_index([("id", 1)], unique=True)
+        # Invoice domain (Stage 2)
+        await self.db.invoices.create_index([("created_by", 1), ("approval_status", 1)])
+        await self.db.invoices.create_index([("created_at", -1)])
+        await self.db.invoices.create_index([("invoice_number", 1), ("vendor.name", 1)])
         logger.info("MongoDB indexes verified successfully.")
 
     async def disconnect(self) -> None:

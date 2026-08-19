@@ -1,0 +1,11 @@
+flowchart LR
+    A[Employee<br/>Submit Expense] --> B[Receipt Upload]
+    B --> C[OCR Extraction]
+    C --> D[Rule Engine<br/>Policy Validation]
+    D --> E[Duplicate<br/>Detection]
+    E --> F[AI Analysis<br/>Fraud Risk + Recommendation]
+    F --> G[Manager<br/>Approval]
+    G --> H[Finance Officer<br/>Verification]
+    H --> I[Payment]
+    I --> J[Audit Logging]
+    J --> K[Analytics]

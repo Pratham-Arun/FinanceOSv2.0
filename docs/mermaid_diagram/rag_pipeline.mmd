@@ -1,0 +1,19 @@
+flowchart LR
+    subgraph Ingestion["Document Ingestion & Indexing"]
+        ADMIN[Admin Portal] --> VALIDATE[Validate File & Text]
+        VALIDATE --> STORE[Store Document]
+        STORE --> MONGO_KB[(MongoDB Knowledge Base)]
+    end
+
+    subgraph Retrieval["RAG Retrieval"]
+        QUERY[User Policy Question] --> TEXT_SEARCH[Text Index Search]
+        MONGO_KB -.-> TEXT_SEARCH
+        TEXT_SEARCH --> TOP_CHUNKS[Retrieve Top Matching Policy Chunks]
+    end
+
+    subgraph Generation["Response Generation"]
+        TOP_CHUNKS --> CONTEXT[Load Grounding Context]
+        QUERY --> CONTEXT
+        CONTEXT --> LLM[LLM / Grounding Generator]
+        LLM --> ANSWER[Grounded AI Response with Policy Sources]
+    end

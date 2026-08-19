@@ -4,7 +4,8 @@ import {
   LayoutDashboard, FileText, Send, BarChart3,
   User, Settings, Bell, LogOut,
   Zap, BookOpen, Sliders, Cpu, ShieldCheck,
-  CheckSquare, Users, CreditCard, ClipboardList, Activity
+  CheckSquare, Users, CreditCard, ClipboardList, Activity,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
@@ -139,6 +140,7 @@ const Sidebar = () => {
               <SidebarLink to="/" end icon={<LayoutDashboard size={15} strokeWidth={1.75} />} label="Dashboard" />
               <SidebarLink to="/expenses" icon={<FileText size={15} strokeWidth={1.75} />} label="My Claims" />
               <SidebarLink to="/submit" icon={<Send size={15} strokeWidth={1.75} />} label="Submit Claim" />
+              <SidebarLink to="/invoices" icon={<Receipt size={15} strokeWidth={1.75} />} label="Invoices" />
             </NavSection>
             <NavSection label="Account">
               <SidebarLink to="/notifications" icon={<Bell size={15} strokeWidth={1.75} />} label="Notifications" />
@@ -153,6 +155,7 @@ const Sidebar = () => {
             <NavSection label="Workspace">
               <SidebarLink to="/" end icon={<LayoutDashboard size={15} strokeWidth={1.75} />} label="Dashboard" />
               <SidebarLink to="/expenses" icon={<CheckSquare size={15} strokeWidth={1.75} />} label="Approvals" />
+              <SidebarLink to="/invoices" icon={<Receipt size={15} strokeWidth={1.75} />} label="Invoice Approvals" />
             </NavSection>
             <NavSection label="Insights">
               <SidebarLink to="/analytics" icon={<BarChart3 size={15} strokeWidth={1.75} />} label="Analytics" />
@@ -170,6 +173,7 @@ const Sidebar = () => {
             <NavSection label="Workspace">
               <SidebarLink to="/" end icon={<LayoutDashboard size={15} strokeWidth={1.75} />} label="Dashboard" />
               <SidebarLink to="/expenses" icon={<CreditCard size={15} strokeWidth={1.75} />} label="Payments" />
+              <SidebarLink to="/invoices" icon={<Receipt size={15} strokeWidth={1.75} />} label="Invoice Payments" />
             </NavSection>
             <NavSection label="Insights">
               <SidebarLink to="/analytics" icon={<BarChart3 size={15} strokeWidth={1.75} />} label="Analytics" />
@@ -187,6 +191,7 @@ const Sidebar = () => {
             <NavSection label="Overview">
               <SidebarLink to="/" end icon={<LayoutDashboard size={15} strokeWidth={1.75} />} label="Dashboard" />
               <SidebarLink to="/expenses" icon={<ClipboardList size={15} strokeWidth={1.75} />} label="All Expenses" />
+              <SidebarLink to="/invoices" icon={<Receipt size={15} strokeWidth={1.75} />} label="All Invoices" />
               <SidebarLink to="/analytics" icon={<BarChart3 size={15} strokeWidth={1.75} />} label="Analytics" />
             </NavSection>
             <NavSection label="Administration">

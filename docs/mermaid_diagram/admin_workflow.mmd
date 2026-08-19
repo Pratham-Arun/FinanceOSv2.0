@@ -1,0 +1,56 @@
+sequenceDiagram
+    actor Admin
+    participant FE as React Frontend
+    participant API as FastAPI
+    participant AUTH as JWT Auth
+    participant USER as User Service
+    participant POLICY as Policy Service
+    participant CONFIG as AI Configuration
+    participant KB as Knowledge Base
+    participant OBS as AI Observability
+    participant DB as MongoDB
+
+    Admin->>FE: Login
+
+    FE->>API: POST /api/auth/login
+    API->>AUTH: Validate Admin
+    AUTH->>DB: Fetch Admin
+    DB-->>AUTH: Admin Data
+    AUTH-->>API: JWT
+    API-->>FE: Admin Session
+
+    Admin->>FE: Open Admin Dashboard
+
+    FE->>API: GET /api/admin/logs
+    API->>AUTH: Verify JWT + Admin Role
+    AUTH-->>API: Authorized
+
+    par User Management
+        Admin->>FE: Manage Users
+        FE->>API: POST /api/admin/users
+        API->>USER: Create / Update / Disable User
+        USER->>DB: Update Users
+    and Policy Management
+        Admin->>FE: Manage Policies
+        FE->>API: PUT /api/admin/policies
+        API->>POLICY: Create / Update Policy
+        POLICY->>DB: Store Policy
+    and AI Configuration
+        Admin->>FE: Configure AI Provider
+        FE->>API: PUT /api/admin/ai-config
+        API->>CONFIG: Update Provider Configuration
+        CONFIG->>DB: Store AI Configuration
+    and Knowledge Base
+        Admin->>FE: Upload Policy Document
+        FE->>API: POST /api/knowledge/ingest
+        API->>KB: Process Document (RAG)
+        KB->>DB: Store Metadata
+    and AI Monitoring
+        Admin->>FE: View AI Logs
+        FE->>API: GET /api/admin/ai-logs
+        API->>OBS: Query AI Metrics
+        OBS->>DB: Fetch AI Logs
+    end
+
+    API-->>FE: Operation Status / Logs Data
+    FE-->>Admin: Display Updated Dashboard Details
