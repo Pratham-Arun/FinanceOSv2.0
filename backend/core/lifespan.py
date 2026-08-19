@@ -9,6 +9,6 @@ from utils.logger import logger
 async def lifespan(app: FastAPI):
     await mongo.connect()
     await seed_database()
-    logger.info("FinanceOS started", llm="gemini-2.5-flash", ocr="tesseract")
+    logger.info("FinanceOS started", llm="groq/llama-3.3-70b-versatile", ocr="tesseract")
     yield
     await mongo.disconnect()

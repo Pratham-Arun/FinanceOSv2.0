@@ -1,3 +1,4 @@
+import os
 import uuid
 import time
 from fastapi import FastAPI, Request
@@ -38,11 +39,18 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
 
 
 def configure_middleware(app: FastAPI) -> None:
+    # CORS — restrict allowed origins via ALLOWED_ORIGINS env var.
+    # In development, defaults to localhost:3000 and localhost:5173.
+    # In production set ALLOWED_ORIGINS to a comma-separated list of your domains.
+    # Example: ALLOWED_ORIGINS=https://app.financeos.com,https://admin.financeos.com
+    raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+    allow_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+
     # CORS must be added last (outermost layer in Starlette's middleware stack)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
