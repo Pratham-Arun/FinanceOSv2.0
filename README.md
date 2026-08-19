@@ -23,17 +23,18 @@ An intelligent expense reimbursement, policy auditing, and conversational compli
 11. [Document Upload & RAG Pipeline](#-document-upload--rag-pipeline)
 12. [Database Architecture](#️-database-architecture)
 13. [Expense Lifecycle](#-expense-lifecycle)
-14. [Project Structure](#-project-structure)
-15. [API Endpoints](#-api-endpoints)
-16. [Installation](#-installation)
-17. [Configuration](#️-configuration)
-18. [Running the Project](#-running-the-project)
-19. [Performance & Observability](#-performance--observability)
-20. [Testing](#-testing)
-21. [Security Considerations](#-security-considerations)
-22. [Design Principles](#-design-principles)
-23. [Future Enhancements](#-future-enhancements)
-24. [License](#-license)
+14. [**Invoice Domain (New)**](#-invoice-management-domain-new)
+15. [Project Structure](#-project-structure)
+16. [API Endpoints](#-api-endpoints)
+17. [Installation](#-installation)
+18. [Configuration](#️-configuration)
+19. [Running the Project](#-running-the-project)
+20. [Performance & Observability](#-performance--observability)
+21. [Testing](#-testing)
+22. [Security Considerations](#-security-considerations)
+23. [Design Principles](#-design-principles)
+24. [Future Enhancements](#-future-enhancements)
+25. [License](#-license)
 
 ---
 
@@ -91,6 +92,12 @@ What makes FinanceOS an enterprise-grade compliance framework:
   - `Medium Risk` → Manager Review Required
   - `High Risk` → Manual Investigation Required
 
+### 🧾 Invoice Management Domain
+- **Full Lifecycle State Machine** — Manages vendor invoices through a strict state machine: `Draft → Submitted → Under Review → Approved → Paid`, with `Rejected` and `Cancelled` branches.
+- **Invoice Document OCR Pipeline** — Scans uploaded PDF/image invoices using Tesseract OCR to extract vendor name, tax ID, dates, subtotal, tax amount, and total claim amount alongside individual field confidence scores.
+- **Financial Mismatch Guard** — Enforces subtotal + tax ≈ total validation checks to catch accounting discrepancies before submission.
+- **Interactive Review & Payment Workspace** — 3-column detail view featuring PDF/image document viewer, OCR field confidence visualizer, linked expense claim references, manager decision controls, and finance payment confirmation with transaction reference logging.
+
 ### 💬 AI Copilot & RAG
 - **Policy QA** — RAG-based query answers grounded in uploaded company policy handbooks.
 - **Forced Routing** — Classifier bypasses LLM call for status/rejection queries, directing to fast database queries.
@@ -106,7 +113,7 @@ What makes FinanceOS an enterprise-grade compliance framework:
 - **Document Intelligence**: Tesseract OCR, PIL (Python Imaging Library)
 - **RAG Engine**: MongoDB Knowledge Base (Text Index Search), RRF (Reciprocal Rank Fusion)
 - **Database**: MongoDB (Local or Atlas)
-- **Development & Testing**: Pytest, Git, GitHub, Postman
+- **Development & Testing**: Pytest (backend), Jest + React Testing Library (frontend), Git, GitHub, Postman
 
 ---
 
@@ -1128,7 +1135,8 @@ FinanceOS/
 │   │   ├── analytics_router.py    # Enterprise financial and accuracy KPI endpoints
 │   │   ├── ai_router.py           # Conversational AI Copilot chat
 │   │   ├── knowledge_router.py    # Policy database search and ingestion
-│   │   └── admin_router.py        # System policies, AI/OCR config dashboard
+│   │   ├── admin_router.py        # System policies, AI/OCR config dashboard
+│   │   └── invoice_router.py      # ✨ Invoice CRUD, submit, approve, pay, cancel
 │   │
 │   ├── services/                  # Business logic services
 │   │   ├── auth_service.py        # Authentication logic orchestrator
@@ -1142,7 +1150,8 @@ FinanceOS/
 │   │   ├── chat_service.py        # AI Copilot keyword and RAG router
 │   │   ├── rag_service.py         # Grounded prompt and search generator
 │   │   ├── gemini_service.py      # Google Gemini 2.0 Flash integration
-│   │   └── groq_service.py        # Optional Groq provider fallback
+│   │   ├── groq_service.py        # Optional Groq provider fallback
+│   │   └── invoice_service.py     # ✨ Invoice state machine & OCR integration
 │   │
 │   ├── repositories/              # DAO persistence layer (Repository Pattern)
 │   │   ├── interfaces/            # Abstract base interfaces
@@ -1151,11 +1160,16 @@ FinanceOS/
 │   │   ├── expense_repository.py  # Expenses DB queries
 │   │   ├── policy_repository.py   # Policy limits DB queries
 │   │   ├── ai_logs_repository.py  # AI logs DB queries
-│   │   └── knowledge_repository.py# Grounding handbook DB queries
+│   │   ├── knowledge_repository.py# Grounding handbook DB queries
+│   │   └── invoice_repository.py  # ✨ Invoice persistence & status queries
 │   │
 │   ├── schemas/                   # Pydantic validation schemas
+│   │   └── invoice.py             # ✨ Invoice request/response models
 │   ├── seed/                      # Initial seeding datasets
 │   ├── tests/                     # Pytest testing suite
+│   │   ├── test_invoice_domain.py          # ✨ Invoice unit tests (46)
+│   │   ├── test_invoice_comprehensive.py   # ✨ Invoice lifecycle tests (100)
+│   │   └── test_invoice_stage3.py          # ✨ Invoice edge-case tests (24)
 │   └── uploads/                   # Temporary filesystem upload store
 │
 ├── frontend/                      # React SPA Frontend
@@ -1164,6 +1178,13 @@ FinanceOS/
 │   │   ├── components/            # Reusable UI parts (dashboard, risk panels)
 │   │   ├── context/               # Global state (Auth, Notification Context)
 │   │   ├── pages/                 # Authenticated route components
+│   │   │   ├── Invoices.jsx        # ✨ Invoice list with KPI strip, search & filter
+│   │   │   ├── InvoiceDetails.jsx  # ✨ Detail view: doc viewer, OCR, lifecycle actions
+│   │   │   └── SubmitInvoice.jsx   # ✨ Invoice creation form with OCR & validation
+│   │   ├── __tests__/             # ✨ Jest test suites (72 tests)
+│   │   │   ├── Invoices.test.jsx
+│   │   │   ├── InvoiceDetails.test.jsx
+│   │   │   └── SubmitInvoice.test.jsx
 │   │   └── App.js                 # Frontend routing configuration
 │   ├── package.json               # Frontend dependencies list
 │   └── tailwind.config.js         # CSS configuration files
@@ -1198,6 +1219,20 @@ FinanceOS/
 *   `GET /api/approvals/manager/pending` — List pending claims for the manager's team.
 *   `POST /api/approvals/{id}/action` — Approve, Reject, or Request Clarification.
 
+### 🧾 Invoices
+*   `POST /api/invoices` — Create a new vendor invoice record.
+*   `GET /api/invoices` — List paginated invoices based on user role permissions.
+*   `GET /api/invoices/{id}` — Fetch detailed invoice parameters, OCR results, and linked expense.
+*   `PUT /api/invoices/{id}` — Update draft invoice details.
+*   `DELETE /api/invoices/{id}` — Delete draft, rejected, or cancelled invoices.
+*   `POST /api/invoices/{id}/upload` — Upload invoice document and run OCR extraction pipeline.
+*   `POST /api/invoices/{id}/submit` — Submit draft invoice for manager review.
+*   `POST /api/invoices/{id}/approve` — Approve invoice (Manager, Finance, Admin).
+*   `POST /api/invoices/{id}/reject` — Reject invoice with mandatory reviewer comments.
+*   `POST /api/invoices/{id}/pay` — Confirm payment and issue transaction reference (Finance/Admin).
+*   `POST /api/invoices/{id}/cancel` — Cancel active invoice.
+*   `GET /api/invoices/{id}/timeline` — Retrieve audit timeline history for invoice lifecycle.
+
 ### 💼 Finance Approvals
 *   `GET /api/approvals/finance/pending` — List manager-approved claims.
 *   `POST /api/approvals/{id}/action` — Approve and reimburse (Paid) or Reject.
@@ -1223,8 +1258,8 @@ FinanceOS/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Pratham-Arun/FinanceOS.git
-cd FinanceOS
+git clone https://github.com/Pratham-Arun/FinanceOSv2.0.git
+cd FinanceOSv2.0
 ```
 
 ### 2. Create Python Environment
@@ -1326,9 +1361,10 @@ FinanceOS captures request correlation metrics across every module using custom 
 
 ## 🧪 Testing
 
-FinanceOS uses automated unit and integration tests written in pytest.
+FinanceOS features comprehensive test coverage for both backend services and frontend React components.
 
-Run tests:
+### 🐍 Backend Pytest Suite (240 Tests)
+Run backend tests:
 ```bash
 cd backend
 pytest
@@ -1339,11 +1375,24 @@ Verbose mode:
 pytest -v
 ```
 
-Testing areas covered:
-1. **Authentication**: login tokens, role-based validations, profile retrieval.
-2. **Expense Processing**: uploads, OCR mock mappings, validation results.
-3. **Approval Workflows**: Manager and Finance Officer status updates.
-4. **Admin settings**: policy limit modifications and AI log querying.
+Backend testing areas covered:
+1. **Authentication**: JWT token issuing, role-based access control, session validation (13 tests).
+2. **AI & Config Services**: AI endpoints, log metrics, admin configuration (23 tests).
+3. **Approval Workflows**: Multi-level state transitions and regression coverage (29 tests).
+4. **Invoice Domain & OCR**: Comprehensive unit, lifecycle, and stage-3 tests for invoices (170 tests).
+5. **Server & Endpoints**: API routes and static upload serving (10 tests).
+
+### ⚛️ Frontend Jest Suite (72 Tests)
+Run frontend tests:
+```bash
+cd frontend
+npm test -- --watchAll=false
+```
+
+Frontend testing areas covered:
+1. **Invoices List (`Invoices.test.jsx`)**: KPI card aggregates, search filtering, status & currency dropdowns, empty states, and role-based page headers.
+2. **Invoice Submission (`SubmitInvoice.test.jsx`)**: Form validation, total > 0 rules, subtotal + tax = total live mismatch checks, draft saving, and error handling.
+3. **Invoice Details (`InvoiceDetails.test.jsx`)**: OCR confidence displays, role-based action panels (Manager approval, Finance payment confirmation), audit timeline entries, and linked expense navigations.
 
 ---
 
