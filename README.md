@@ -1,4 +1,4 @@
-# 💰 FinanceOS – AI-Powered Enterprise Expense Management Platform
+# 💰 FinanceOS: AI-Powered Enterprise Expense Management Platform
 
 An intelligent expense reimbursement, policy auditing, and conversational compliance assistant powered by **FastAPI**, **React**, **Google Gemini**, **Tesseract OCR**, and **Retrieval-Augmented Generation (RAG)**, designed to provide receipt intelligence, automated compliance auditing, role-based workflows, and enterprise observability through a secure, modular backend.
 
